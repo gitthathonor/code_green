@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import site.metacoding.red.domain.boards.BoardsDao;
 import site.metacoding.red.domain.users.Users;
 import site.metacoding.red.domain.users.UsersDao;
+import site.metacoding.red.handler.ex.MyApiException;
+import site.metacoding.red.handler.ex.MyException;
 import site.metacoding.red.web.dto.request.users.JoinDto;
 import site.metacoding.red.web.dto.request.users.LoginDto;
 import site.metacoding.red.web.dto.request.users.UpdateDto;
@@ -25,10 +27,10 @@ public class UsersService {
 	
 	public Users 로그인(LoginDto loginDto) {
 		Users usersPS = usersDao.findByUsername(loginDto.getUsername());
-
+		
 		if(usersPS == null) {
-			return null;
-		}
+			throw new MyApiException("가입된 회원이 없습니다.");
+		} 
 		
 		if(usersPS.getPassword().equals(loginDto.getPassword())) {
 			return usersPS;

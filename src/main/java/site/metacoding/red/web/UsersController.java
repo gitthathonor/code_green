@@ -1,12 +1,19 @@
 package site.metacoding.red.web;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import lombok.RequiredArgsConstructor;
 import site.metacoding.red.domain.users.Users;
+import site.metacoding.red.handler.ex.MyApiException;
 import site.metacoding.red.service.UsersService;
 import site.metacoding.red.web.dto.request.users.JoinDto;
 import site.metacoding.red.web.dto.request.users.LoginDto;
@@ -31,7 +39,7 @@ public class UsersController {
 	private final HttpSession session;
 	
 	// http://localhost:8000/users/usernameSameCheck?username=ssar
-	@GetMapping("/users/usernameSameCheck")
+	@GetMapping("/api/users/usernameSameCheck")
 	public @ResponseBody CMRespDto<Boolean> usernameSameCheck(String username) {
 		boolean isSame = usersService.유저네임중복확인(username);
 		return new CMRespDto<>(1, "성공", isSame);
@@ -57,13 +65,41 @@ public class UsersController {
 		return "users/loginForm";
 	}
 	
-	@PostMapping("/join")
-	public @ResponseBody CMRespDto<?> join(@RequestBody JoinDto joinDto) {
+	@PostMapping("/api/join")
+	public @ResponseBody CMRespDto<?> join(@RequestBody @Valid JoinDto joinDto, BindingResult bindingResult) {
+		
+//		//유효성 검사
+//		if(joinDto.getUsername().length() > 20) {
+//			throw new MyApiException("username이 길어요~");
+//		}
+//		
+//		if(!joinDto.getEmail().contains("@")) {
+//			throw new MyApiException("Email 양식에 맞지 않습니다.");
+//		}
+		
+		if(bindingResult.hasErrors()) {
+			System.out.println("에러가 있습니다.");
+//			FieldError fe = bindingResult.getFieldError();
+			
+			List<FieldError> feList = bindingResult.getFieldErrors();
+			Map<String, String> map = new HashMap<>();
+			for(FieldError fe : feList) {
+				System.out.println(fe.getDefaultMessage());
+				map.put(fe.getField(), fe.getDefaultMessage());
+			}
+			
+			throw new MyApiException(map.toString());
+			
+		} else {
+			System.out.println("에러가 없습니다.");
+		}
+		
+		
 		usersService.회원가입(joinDto);
 		return new CMRespDto<>(1, "회원가입성공", null);
 	}
 	
-	@PostMapping("/login")
+	@PostMapping("/api/login")
 	public @ResponseBody CMRespDto<?> login(@RequestBody LoginDto loginDto, HttpServletResponse response) {
 		System.out.println("===========");
 		System.out.println(loginDto.isRemember());
